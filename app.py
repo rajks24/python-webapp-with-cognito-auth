@@ -1,9 +1,6 @@
 from flask import Flask, render_template, redirect, url_for, session, request
 from flask_cors import CORS
-import boto3
 import requests
-import json
-import jwt
 from dotenv import load_dotenv
 import os
 
