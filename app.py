@@ -4,17 +4,23 @@ import boto3
 import requests
 import json
 import jwt
+from dotenv import load_dotenv
+import os
+
+# Load environment variables from .env file
+load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
 CORS(app)
 
 # AWS Cognito configuration
-USER_POOL_ID = 'ap-southeast-2_TQHGbRRgb'
-CLIENT_ID = '1ohpj05vj7mo8g0bpu09sne3ci'
-REGION = 'ap-southeast-2'
-REDIRECT_URI = 'http://localhost:5000/callback'
-COGNITO_DOMAIN = 'testapp-login.auth.ap-southeast-2.amazoncognito.com'  # e.g., 'your-domain.auth.region.amazoncognito.com'
+USER_POOL_ID = os.getenv('USER_POOL_ID')
+CLIENT_ID = os.getenv('CLIENT_ID')
+REGION = os.getenv('REGION')
+REDIRECT_URI = os.getenv('REDIRECT_URI')
+COGNITO_DOMAIN = os.getenv('COGNITO_DOMAIN')
+APP_CLIENT_SCOPE = os.getenv('APP_CLIENT_SCOPE')
 
 @app.route('/')
 def home():
