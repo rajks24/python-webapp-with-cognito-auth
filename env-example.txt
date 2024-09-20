@@ -1,0 +1,3 @@
+USER_POOL_ID=your_user_pool_id
+CLIENT_ID=your_app_client_id
+REGION=your_aws_region

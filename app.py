@@ -2,15 +2,20 @@ from flask import Flask, render_template, redirect, url_for, session, request
 from flask_cors import CORS
 from pycognito import Cognito
 import boto3
+from dotenv import load_dotenv
+import os
+
+# Load environment variables from .env file
+load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
 CORS(app)
 
 # AWS Cognito configuration
-USER_POOL_ID = 'ap-southeast-2_TQHGbRRgb'
-CLIENT_ID = '1ohpj05vj7mo8g0bpu09sne3ci'
-REGION = 'ap-southeast-2'
+USER_POOL_ID = os.getenv('USER_POOL_ID')
+CLIENT_ID = os.getenv('CLIENT_ID')
+REGION = os.getenv('REGION')
 
 cognito_client = boto3.client('cognito-idp', region_name=REGION)
 
