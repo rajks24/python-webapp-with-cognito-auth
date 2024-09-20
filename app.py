@@ -3,7 +3,6 @@ from flask_cors import CORS
 from pycognito import Cognito
 import boto3
 import requests
-import json
 import os
 from dotenv import load_dotenv
 
