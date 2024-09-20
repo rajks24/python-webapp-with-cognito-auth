@@ -1,20 +1,35 @@
 from flask import Flask, render_template, redirect, url_for, session, request
 from flask_cors import CORS
+from pycognito import Cognito
 import boto3
 import requests
 import json
-import jwt
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
 CORS(app)
 
 # AWS Cognito configuration
-USER_POOL_ID = 'ap-southeast-2_TQHGbRRgb'
-CLIENT_ID = '1ohpj05vj7mo8g0bpu09sne3ci'
-REGION = 'ap-southeast-2'
-REDIRECT_URI = 'http://localhost:5000/callback'
-COGNITO_DOMAIN = 'testapp-login.auth.ap-southeast-2.amazoncognito.com'  # e.g., 'your-domain.auth.region.amazoncognito.com'
+USER_POOL_ID = os.getenv('USER_POOL_ID')
+CLIENT_ID = os.getenv('CLIENT_ID')
+REGION = os.getenv('REGION')
+REDIRECT_URI = os.getenv('REDIRECT_URI')
+COGNITO_DOMAIN = os.getenv('COGNITO_DOMAIN')
+APP_CLIENT_SCOPE = os.getenv('APP_CLIENT_SCOPE')
+
+def is_hosted_ui_configured():
+    client = boto3.client('cognito-idp', region_name=REGION)
+    response = client.describe_user_pool_client(
+        UserPoolId=USER_POOL_ID,
+        ClientId=CLIENT_ID
+    )
+    callback_urls = response['UserPoolClient'].get('CallbackURLs', [])
+    return bool(callback_urls)
 
 @app.route('/')
 def home():
@@ -23,11 +38,28 @@ def home():
     user_info = session.get('user_info', {})
     return render_template('index.html', logged_in=logged_in, username=username, user_info=user_info)
 
-
-@app.route('/login')
+@app.route('/login', methods=['GET', 'POST'])
 def login():
-    login_url = f"https://{COGNITO_DOMAIN}/login?client_id={CLIENT_ID}&response_type=code&scope=openid+profile&redirect_uri={REDIRECT_URI}"
-    return redirect(login_url)
+    print("Using ALLOW_USER_SRP_AUTH flow")
+    if is_hosted_ui_configured():
+        login_url = f"https://{COGNITO_DOMAIN}/login?client_id={CLIENT_ID}&response_type=code&scope={APP_CLIENT_SCOPE}&redirect_uri={REDIRECT_URI}"
+        print("Hosted UI is configured. Redirecting to Hosted UI.")
+        return redirect(login_url)
+    else:
+        if request.method == 'POST':
+            username = request.form['username']
+            password = request.form['password']
+            try:
+                user = Cognito(USER_POOL_ID, CLIENT_ID, username=username)
+                user.authenticate(password=password)
+                session['logged_in'] = True
+                session['username'] = username
+                return redirect(url_for('home'))
+            except Exception as e:
+                print(f"Authentication failed: {e}")
+                return 'Invalid username or password', 401
+        print("Hosted UI is not configured. Showing app's own login page.")
+        return render_template('login.html')
 
 @app.route('/callback')
 def callback():
@@ -69,8 +101,9 @@ def callback():
 def logout():
     session.pop('logged_in', None)
     session.pop('username', None)
-    logout_url = f"https://{COGNITO_DOMAIN}/logout?client_id={CLIENT_ID}&logout_uri=http://localhost:5000/"
-    return redirect(logout_url)
+    session.pop('user_info', None)
+    print("User logged out. Redirecting to home page.")
+    return redirect(url_for('home'))
 
 if __name__ == '__main__':
     app.run(debug=True)

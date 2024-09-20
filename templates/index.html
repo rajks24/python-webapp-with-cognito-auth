@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Python Secure App</title>
+    <title>Python Web App</title>
     <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
 </head>
 <body>
-    <h1>Python Secure App</h1>
+    <h1>Python Web App</h1>
     {% if logged_in %}
         <p>Welcome {{ username }}, you are logged in</p>
         <a href="{{ url_for('logout') }}">Logout</a>
