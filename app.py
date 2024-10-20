@@ -32,11 +32,29 @@ def login():
     try:
         user = Cognito(USER_POOL_ID, CLIENT_ID, username=username)
         user.authenticate(password=password)
+        
+        # Fetch user details using boto3
+        client = boto3.client('cognito-idp', region_name=REGION)
+        response = client.admin_get_user(
+            UserPoolId=USER_POOL_ID,
+            Username=username
+        )
+        
+        # Debug print to inspect response structure
+        # print("User info:", response)
+        
+        # Convert response to a dictionary
+        user_info_dict = {attr['Name']: attr['Value'] for attr in response['UserAttributes']}
+        
+        print("User info dict:", user_info_dict)
+        
         session['logged_in'] = True
         session['username'] = username
+        session['user_info'] = user_info_dict
         return redirect(url_for('home'))
     except Exception as e:
-        return str(e), 401
+        print(f"Authentication failed: {e}")
+        return 'Invalid username or password', 401
 
 @app.route('/logout')
 def logout():
